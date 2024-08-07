@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web App</title>
+</head>
+<body>
+    <h1>Hello, Telegram User!</h1>
+    <div id="user-data"></div>
+
+    <script>
+        function onTelegramAuth(user) {
+            document.getElementById('user-data').innerText = `Hello, ${user.first_name}!`;
+        }
+
+        Telegram.WebApp.ready();
+
+        Telegram.WebApp.MainButton.setText('Close')
+            .onClick(() => {
+                Telegram.WebApp.close();
+            })
+            .show();
+
+        if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+            onTelegramAuth(Telegram.WebApp.initDataUnsafe.user);
+        } else {
+            // Redirect to an authentication page
+        }
+    </script>
+</body>
+</html>
