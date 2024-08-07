@@ -6,27 +6,33 @@
     <title>Telegram Web App</title>
 </head>
 <body>
-    <h1>Hello, Telegram User!</h1>
+    <h1 id="greeting">Hello, Telegram User!</h1>
     <div id="user-data"></div>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        function onTelegramAuth(user) {
-            document.getElementById('user-data').innerText = `Hello, ${user.first_name}!`;
-        }
-
+        // Initialize Telegram Web Apps
         Telegram.WebApp.ready();
 
+        // Function to handle authentication and display user data
+        function onTelegramAuth(user) {
+            document.getElementById('greeting').innerText = `Hello, ${user.first_name}!`;
+            document.getElementById('user-data').innerText = `Username: ${user.username}\nID: ${user.id}`;
+        }
+
+        // Check if the user is authenticated and call the function
+        if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+            onTelegramAuth(Telegram.WebApp.initDataUnsafe.user);
+        } else {
+            document.getElementById('user-data').innerText = 'User not authenticated';
+        }
+
+        // Customize the main button
         Telegram.WebApp.MainButton.setText('Close')
             .onClick(() => {
                 Telegram.WebApp.close();
             })
             .show();
-
-        if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
-            onTelegramAuth(Telegram.WebApp.initDataUnsafe.user);
-        } else {
-            // Redirect to an authentication page
-        }
     </script>
 </body>
 </html>
