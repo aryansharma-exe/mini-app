@@ -1,38 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Web App</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Telegram Post Share</title>
+  <style>
+    body { font-family: Arial, sans-serif; }
+    #post-form { margin-bottom: 20px; }
+    #posts { margin-top: 20px; }
+    .post { border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; }
+  </style>
 </head>
 <body>
-    <h1 id="greeting">Hello, Telegram User!</h1>
-    <div id="user-data"></div>
+  <h1>Share Your Post</h1>
+  <div id="post-form">
+    <textarea id="post-content" rows="4" cols="50" placeholder="Write something..."></textarea><br>
+    <button id="submit-post">Submit Post</button>
+  </div>
+  <div id="posts">
+    <h2>Your Posts</h2>
+    <div id="posts-list"></div>
+  </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
-        // Initialize Telegram Web Apps
-        Telegram.WebApp.ready();
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script>
+      document.addEventListener('DOMContentLoaded', () => {
+  const postContent = document.getElementById('post-content');
+  const submitPost = document.getElementById('submit-post');
+  const postsList = document.getElementById('posts-list');
 
-        // Function to handle authentication and display user data
-        function onTelegramAuth(user) {
-            document.getElementById('greeting').innerText = `Hello, ${user.first_name}!`;
-            document.getElementById('user-data').innerText = `Username: ${user.username}\nID: ${user.id}`;
-        }
+  const telegram = window.Telegram.WebApp;
 
-        // Check if the user is authenticated and call the function
-        if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
-            onTelegramAuth(Telegram.WebApp.initDataUnsafe.user);
-        } else {
-            document.getElementById('user-data').innerText = 'User not authenticated';
-        }
+  // Initialize Telegram Web App
+  telegram.ready();
 
-        // Customize the main button
-        Telegram.WebApp.MainButton.setText('Close')
-            .onClick(() => {
-                Telegram.WebApp.close();
-            })
-            .show();
-    </script>
+  submitPost.addEventListener('click', () => {
+    const content = postContent.value.trim();
+    if (content) {
+      // Save post content (mock saving for demo)
+      const postElement = document.createElement('div');
+      postElement.classList.add('post');
+      postElement.textContent = content;
+
+      // Append new post to posts list
+      postsList.appendChild(postElement);
+      postContent.value = '';
+    } else {
+      alert('Please write something before submitting.');
+    }
+  });
+});
+  </script>
 </body>
 </html>
