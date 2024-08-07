@@ -21,7 +21,7 @@
       <button id="submit-post" class="w-full bg-blue-500 text-white py-2 rounded">Submit Post</button>
     </div>
     <div id="posts">
-      <h2 class="text-xl font-bold mb-2">Your Posts</h2>
+      <h2 class="text-xl font-bold mb-2">All Posts</h2>
       <div id="posts-list" class="space-y-4"></div>
     </div>
   </div>
@@ -40,50 +40,91 @@
   // Initialize Telegram Web App
   telegram.ready();
 
+  const loadPosts = () => {
+    fetch('/api/posts')
+      .then(response => response.json())
+      .then(posts => {
+        postsList.innerHTML = '';
+        posts.forEach(post => {
+          const postElement = document.createElement('div');
+          postElement.classList.add('post', 'bg-white', 'p-4', 'rounded', 'shadow', 'mb-4');
+
+          const userElement = document.createElement('div');
+          userElement.classList.add('text-sm', 'font-semibold', 'text-gray-600', 'mb-2');
+          userElement.textContent = `User: ${post.user}`;
+          postElement.appendChild(userElement);
+
+          if (post.category) {
+            const categoryElement = document.createElement('div');
+            categoryElement.classList.add('text-sm', 'font-semibold', 'text-gray-600', 'mb-2');
+            categoryElement.textContent = `Category: ${post.category}`;
+            postElement.appendChild(categoryElement);
+          }
+
+          if (post.content) {
+            const contentElement = document.createElement('div');
+            contentElement.classList.add('mb-2');
+            contentElement.textContent = post.content;
+            postElement.appendChild(contentElement);
+          }
+
+          if (post.image) {
+            const imageElement = document.createElement('img');
+            imageElement.src = `data:image/png;base64,${post.image}`;
+            imageElement.classList.add('mb-2', 'w-full', 'h-auto', 'rounded');
+            postElement.appendChild(imageElement);
+          }
+
+          postsList.appendChild(postElement);
+        });
+      });
+  };
+
+  loadPosts();
+
   submitPost.addEventListener('click', () => {
     const content = postContent.value.trim();
     const category = postCategory.value;
-    const image = postImage.files[0];
+    const imageFile = postImage.files[0];
 
-    if (content || image) {
-      const postElement = document.createElement('div');
-      postElement.classList.add('post', 'bg-white', 'p-4', 'rounded', 'shadow');
+    if (content || imageFile) {
+      const post = {
+        user: telegram.initDataUnsafe.user.username,
+        content,
+        category
+      };
 
-      if (category) {
-        const categoryElement = document.createElement('div');
-        categoryElement.classList.add('text-sm', 'font-semibold', 'text-gray-600', 'mb-2');
-        categoryElement.textContent = `Category: ${category}`;
-        postElement.appendChild(categoryElement);
-      }
-
-      if (content) {
-        const contentElement = document.createElement('div');
-        contentElement.classList.add('mb-2');
-        contentElement.textContent = content;
-        postElement.appendChild(contentElement);
-      }
-
-      if (image) {
+      if (imageFile) {
         const reader = new FileReader();
         reader.onload = (e) => {
-          const imageElement = document.createElement('img');
-          imageElement.src = e.target.result;
-          imageElement.classList.add('mb-2', 'w-full', 'h-auto', 'rounded');
-          postElement.appendChild(imageElement);
+          post.image = e.target.result.split(',')[1];
+          savePost(post);
         };
-        reader.readAsDataURL(image);
+        reader.readAsDataURL(imageFile);
+      } else {
+        savePost(post);
       }
-
-      postsList.appendChild(postElement);
-
-      // Reset form
-      postContent.value = '';
-      postImage.value = '';
-      postCategory.value = '';
     } else {
       alert('Please write something or upload an image before submitting.');
     }
   });
+
+  const savePost = (post) => {
+    fetch('/api/posts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(post)
+    })
+    .then(response => response.json())
+    .then(newPost => {
+      loadPosts();
+      postContent.value = '';
+      postImage.value = '';
+      postCategory.value = '';
+    });
+  };
 });
   </script>
 </body>
