@@ -1,131 +1,104 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Telegram Post Share</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Ball Game</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; background-color: #f0f0f0; }
+        #gameArea { width: 300px; height: 500px; border: 2px solid #333; position: relative; margin: 0 auto; overflow: hidden; background-color: #eee; }
+        .ball { width: 30px; height: 30px; background-color: red; position: absolute; border-radius: 50%; }
+        #score { font-size: 20px; }
+        #startBtn { padding: 10px 20px; font-size: 18px; cursor: pointer; }
+    </style>
 </head>
-<body class="bg-gray-100 text-gray-900">
-  <div class="container mx-auto p-4">
-    <h1 class="text-2xl font-bold mb-4">Share Your Post</h1>
-    <div id="post-form" class="mb-4 p-4 bg-white rounded shadow">
-      <textarea id="post-content" class="w-full p-2 border rounded mb-2" rows="4" placeholder="Write something..."></textarea>
-      <input type="file" id="post-image" class="w-full p-2 border rounded mb-2">
-      <select id="post-category" class="w-full p-2 border rounded mb-2">
-        <option value="">Select Category</option>
-        <option value="General">General</option>
-        <option value="Announcement">Announcement</option>
-        <option value="Question">Question</option>
-      </select>
-      <button id="submit-post" class="w-full bg-blue-500 text-white py-2 rounded">Submit Post</button>
-    </div>
-    <div id="posts">
-      <h2 class="text-xl font-bold mb-2">All Posts</h2>
-      <div id="posts-list" class="space-y-4"></div>
-    </div>
-  </div>
+<body>
+    <h1>Catch the Ball!</h1>
+    <p id="score">Score: 0</p>
+    <div id="gameArea"></div>
+    <button id="startBtn">Start Game</button>
+    <script src="https://telegram.org/js/games.js"></script>
+    <script>
+      // Initialize variables
+let score = 0;
+let gameInterval;
+let gameArea = document.getElementById("gameArea");
+let scoreDisplay = document.getElementById("score");
+let startBtn = document.getElementById("startBtn");
+let gameRunning = false;
 
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-  const postContent = document.getElementById('post-content');
-  const postImage = document.getElementById('post-image');
-  const postCategory = document.getElementById('post-category');
-  const submitPost = document.getElementById('submit-post');
-  const postsList = document.getElementById('posts-list');
-
-  const telegram = window.Telegram.WebApp;
-
-  // Initialize Telegram Web App
-  telegram.ready();
-
-  const loadPosts = () => {
-    fetch('/api/posts')
-      .then(response => response.json())
-      .then(posts => {
-        postsList.innerHTML = '';
-        posts.forEach(post => {
-          const postElement = document.createElement('div');
-          postElement.classList.add('post', 'bg-white', 'p-4', 'rounded', 'shadow', 'mb-4');
-
-          const userElement = document.createElement('div');
-          userElement.classList.add('text-sm', 'font-semibold', 'text-gray-600', 'mb-2');
-          userElement.textContent = `User: ${post.user}`;
-          postElement.appendChild(userElement);
-
-          if (post.category) {
-            const categoryElement = document.createElement('div');
-            categoryElement.classList.add('text-sm', 'font-semibold', 'text-gray-600', 'mb-2');
-            categoryElement.textContent = `Category: ${post.category}`;
-            postElement.appendChild(categoryElement);
-          }
-
-          if (post.content) {
-            const contentElement = document.createElement('div');
-            contentElement.classList.add('mb-2');
-            contentElement.textContent = post.content;
-            postElement.appendChild(contentElement);
-          }
-
-          if (post.image) {
-            const imageElement = document.createElement('img');
-            imageElement.src = `data:image/png;base64,${post.image}`;
-            imageElement.classList.add('mb-2', 'w-full', 'h-auto', 'rounded');
-            postElement.appendChild(imageElement);
-          }
-
-          postsList.appendChild(postElement);
-        });
-      });
-  };
-
-  loadPosts();
-
-  submitPost.addEventListener('click', () => {
-    const content = postContent.value.trim();
-    const category = postCategory.value;
-    const imageFile = postImage.files[0];
-
-    if (content || imageFile) {
-      const post = {
-        user: telegram.initDataUnsafe.user.username,
-        content,
-        category
-      };
-
-      if (imageFile) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          post.image = e.target.result.split(',')[1];
-          savePost(post);
-        };
-        reader.readAsDataURL(imageFile);
-      } else {
-        savePost(post);
-      }
-    } else {
-      alert('Please write something or upload an image before submitting.');
-    }
-  });
-
-  const savePost = (post) => {
-    fetch('/api/posts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(post)
-    })
-    .then(response => response.json())
-    .then(newPost => {
-      loadPosts();
-      postContent.value = '';
-      postImage.value = '';
-      postCategory.value = '';
-    });
-  };
+// Telegram Game API onLoad function
+TelegramGameProxy.init().onEvent('scoreChanged', (event) => {
+    console.log(`New high score: ${event.newScore}`);
 });
-  </script>
+
+// Function to start the game
+function startGame() {
+    if (gameRunning) return;
+    gameRunning = true;
+    score = 0;
+    updateScore();
+    startBtn.style.display = "none";
+
+    // Create balls at intervals
+    gameInterval = setInterval(createBall, 1000);
+    setTimeout(endGame, 30000); // End game after 30 seconds
+}
+
+// Function to create a ball
+function createBall() {
+    const ball = document.createElement("div");
+    ball.classList.add("ball");
+    ball.style.left = Math.random() * (gameArea.clientWidth - 30) + "px";
+    ball.style.top = "-30px"; // Start from above the game area
+
+    gameArea.appendChild(ball);
+
+    // Animate ball falling down
+    let fallInterval = setInterval(() => {
+        ball.style.top = (parseInt(ball.style.top) + 5) + "px";
+
+        // Check if ball reached the bottom
+        if (parseInt(ball.style.top) > gameArea.clientHeight - 30) {
+            gameArea.removeChild(ball);
+            clearInterval(fallInterval);
+        }
+    }, 50);
+
+    // Ball click event
+    ball.addEventListener("click", () => {
+        score++;
+        updateScore();
+        gameArea.removeChild(ball);
+        clearInterval(fallInterval);
+    });
+}
+
+// Function to update score display
+function updateScore() {
+    scoreDisplay.textContent = `Score: ${score}`;
+}
+
+// Function to end the game
+function endGame() {
+    gameRunning = false;
+    clearInterval(gameInterval);
+    startBtn.style.display = "block";
+    alert(`Game Over! Your Score: ${score}`);
+
+    // Send score to Telegram
+    TelegramGameProxy.postScore(score)
+        .then(() => {
+            console.log("Score posted successfully");
+        })
+        .catch((error) => {
+            console.error("Error posting score:", error);
+        });
+}
+
+// Set up start button click event
+startBtn.addEventListener("click", startGame);
+      
+    </script>
 </body>
 </html>
